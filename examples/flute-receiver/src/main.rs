@@ -9,15 +9,11 @@ mod msocket;
 fn main() {
     env_logger::builder().try_init().ok();
 
-    let endpoint = UDPEndpoint::new(None, "224.0.0.1".to_string(), 3400);
-
     let args: Vec<String> = std::env::args().collect();
-    if args.len() == 1 {
-        println!(
-            "Save FLUTE objects to a destination folder received from UDP/FLUTE {:?}",
-            endpoint
-        );
-        println!("Usage: {} path/to/destination_folder", args[0]);
+    if args.len() < 4 {
+        println!("Save FLUTE objects to a destination folder received from UDP/FLUTE");
+        println!("Usage: {} <dest_dir> <multicast_addr:port> <bind_addr>", args[0]);
+        println!("  e.g. {} ./output 224.0.0.1:3400 127.0.0.1", args[0]);
         std::process::exit(0);
     }
 
@@ -27,13 +23,22 @@ fn main() {
         std::process::exit(-1);
     }
 
+    let multicast_addr: std::net::SocketAddr = args[2].parse().unwrap_or_else(|_| {
+        eprintln!("Invalid multicast address: {}", args[2]);
+        std::process::exit(-1);
+    });
+    let bind_addr = &args[3];
+
+    let group_addr = multicast_addr.ip().to_string();
+    let port = multicast_addr.port();
+    let endpoint = UDPEndpoint::new(None, group_addr, port);
+
     log::info!("Create FLUTE, write objects to {:?}", dest_dir);
 
     let mut config = flute::receiver::Config::default();
-    config.object_receive_once = true; // receive objects only once. If the same object is repeated, it will be ignored
+    config.object_receive_once = true;
 
-    // Receive from 224.0.0.1:3400 on 127.0.0.1 (lo) interface
-    let socket = msocket::MSocket::new(&endpoint, Some("127.0.0.1"), false)
+    let socket = msocket::MSocket::new(&endpoint, Some(bind_addr.as_str()), false)
         .expect("Fail to create Multicast Socket");
 
     // Writer is constructed after the socket so its internal Instant marks socket-ready time.

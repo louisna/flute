@@ -96,7 +96,7 @@ impl MSocket {
             )?;
         } else {
             log::info!("Join multicast on interface {}", interface);
-            sock.join_multicast_v4(&group_addr, &interface)?;
+            _ = sock.join_multicast_v4(&group_addr, &interface);
         }
 
         Ok(MSocket {
