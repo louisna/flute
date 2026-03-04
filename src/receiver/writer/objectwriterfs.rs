@@ -3,7 +3,7 @@ use crate::{
     common::udpendpoint::UDPEndpoint,
     error::{FluteError, Result},
 };
-use std::{cell::RefCell, io::Write, time::SystemTime};
+use std::{cell::RefCell, io::Write, time::Instant, time::SystemTime};
 
 ///
 /// Write objects received by the `receiver` to a filesystem
@@ -12,6 +12,7 @@ use std::{cell::RefCell, io::Write, time::SystemTime};
 pub struct ObjectWriterFSBuilder {
     dest: std::path::PathBuf,
     enable_md5_check: bool,
+    start: Instant,
 }
 
 impl ObjectWriterFSBuilder {
@@ -24,6 +25,7 @@ impl ObjectWriterFSBuilder {
         Ok(ObjectWriterFSBuilder {
             dest: dest.to_path_buf(),
             enable_md5_check,
+            start: Instant::now(),
         })
     }
 }
@@ -45,6 +47,7 @@ impl ObjectWriterBuilder for ObjectWriterFSBuilder {
             }),
             meta: meta.clone(),
             enable_md5_check: self.enable_md5_check,
+            start: self.start,
         }))
     }
 
@@ -85,6 +88,7 @@ pub struct ObjectWriterFS {
     inner: RefCell<ObjectWriterFSInner>,
     meta: ObjectMetadata,
     enable_md5_check: bool,
+    start: Instant,
 }
 
 ///
@@ -167,7 +171,9 @@ impl ObjectWriter for ObjectWriterFS {
             return;
         }
 
-        println!("File {:?} is completed !", inner.destination);
+        let elapsed = self.start.elapsed();
+        // println!("File {:?} is completed ! (transfer duration: {:.3}s)", inner.destination, elapsed.as_secs_f64());
+        println!("RESULT-RCT {}", elapsed.as_millis_f64());
         inner.writer.as_mut().unwrap().flush().ok();
         inner.writer = None;
         inner.destination = None
