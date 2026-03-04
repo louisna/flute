@@ -173,7 +173,7 @@ impl ObjectWriter for ObjectWriterFS {
 
         let elapsed = self.start.elapsed();
         // println!("File {:?} is completed ! (transfer duration: {:.3}s)", inner.destination, elapsed.as_secs_f64());
-        println!("RESULT-RCT {}", elapsed.as_millis_f64());
+        println!("RESULT-RCT {}", elapsed.as_millis());
         inner.writer.as_mut().unwrap().flush().ok();
         inner.writer = None;
         inner.destination = None
